@@ -2,7 +2,7 @@ import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_multi_spectral_traces(datasets, dataset_labels, spectral_values, align_datasets=False):
+def plot_multi_time_traces(datasets, dataset_labels, spectral_values, align_datasets=False, xlim=None, ylim=None):
     """
     Plots data from one or more datasets at multiple spectral values.
 
@@ -36,16 +36,19 @@ def plot_multi_spectral_traces(datasets, dataset_labels, spectral_values, align_
     # --- 3. Iterate through each dataset and each spectral value ---
     for ds, ds_label in zip(datasets, dataset_labels):
         
-        # --- NEW: Handle Time Alignment ---
+        # --- 4: Handle Time Alignment ---
+                  
         time_coords_for_plot = ds['time']
+        
         if align_datasets:
-            # Find the time coordinate of the global maximum in 'fitted_data'
-            # argmax() finds the integer indices for the maximum value
-            max_indices = ds['fitted_data'].argmax(dim=['time', 'spectral'])
-            time_of_max = ds['time'].isel(time=max_indices['time']).item()
+            try:
+                irf_offset = ds['irf_center'].item()
+            except (KeyError, AttributeError):
+                print(f"Warning: 'irf_center' not found in '{ds_label}'. Assuming offset is 0.")
+                irf_offset = 0
             
-            # Subtract this time from the coordinate to center the peak at t=0
-            time_coords_for_plot = ds['time'] - time_of_max
+            # align based on irf_center
+            time_coords_for_plot = ds['time'] - irf_offset
 
         for spec_val in spectral_values:
             try:
@@ -79,5 +82,11 @@ def plot_multi_spectral_traces(datasets, dataset_labels, spectral_values, align_
     if align_datasets:
         ax.axvline(0, color='grey', linestyle='--', linewidth=1)
     
+    # Set axis limits if provided ---
+    if xlim:
+        ax.set_xlim(xlim)
+    if ylim:
+        ax.set_ylim(ylim)
+        
     plt.tight_layout()
     plt.show()
