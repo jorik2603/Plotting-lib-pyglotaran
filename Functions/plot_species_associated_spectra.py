@@ -2,8 +2,8 @@ def plot_species_associated_spectra(datasets, dataset_labels, xlim=None, ylim=No
     """
     Plots species-associated spectra from one or more datasets.
 
-    Each dataset is assigned a unique base color. Different species within the
-    same dataset are differentiated by slightly varying the lightness of the base color.
+    Each dataset is assigned a unique color. Different species within the
+    same dataset are differentiated by unique line styles.
 
     Args:
         datasets (xr.Dataset or list): A single dataset or a list of datasets.
@@ -12,7 +12,7 @@ def plot_species_associated_spectra(datasets, dataset_labels, xlim=None, ylim=No
         xlim (tuple, optional): A tuple (min, max) to set the x-axis limits.
         ylim (tuple, optional): A tuple (min, max) to set the y-axis limits.
     """
-    # --- 1. Standardize inputs and get color cycle ---
+    # --- 1. Standardize inputs and define plot styles ---
     if not isinstance(datasets, list):
         datasets = [datasets]
     if not isinstance(dataset_labels, list):
@@ -21,6 +21,9 @@ def plot_species_associated_spectra(datasets, dataset_labels, xlim=None, ylim=No
     if len(datasets) != len(dataset_labels):
         raise ValueError("The number of datasets must match the number of labels.")
 
+    # Define a cycle of linestyles for the species
+    linestyles = ['-', '--', ':', '-.']
+    # Get the default color cycle from matplotlib
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     # --- 2. Create the plot ---
@@ -31,28 +34,20 @@ def plot_species_associated_spectra(datasets, dataset_labels, xlim=None, ylim=No
         try:
             sas = ds['species_associated_spectra']
             spectral_coords = ds['spectral']
-            num_species = len(sas.coords['species'])
             
-            # Assign a unique base color to the current dataset
-            base_color = colors[i % len(colors)]
+            # Assign a unique color to the current dataset
+            color = colors[i % len(colors)]
             
-            # Iterate through each species, assigning a variation of the base color
+            # Iterate through each species, assigning a unique linestyle
             for j, species_name in enumerate(sas.coords['species'].values):
-                # Modify color lightness for each species
-                lightness_factor = 1.0
-                if num_species > 1:
-                    # Map index j to a lightness multiplier (e.g., from 0.7 to 1.3)
-                    lightness_factor = 0.7 + (j / (num_species - 1)) * 0.6
-                
-                h, l, s = colorsys.rgb_to_hls(*mcolors.to_rgb(base_color))
-                plot_color = colorsys.hls_to_rgb(h, max(0, min(1, l * lightness_factor)), s)
-                
                 spectrum_slice = sas.sel(species=species_name)
+                linestyle = linestyles[j % len(linestyles)]
+                
                 legend_label = f"{ds_label} ({species_name})"
                 
-                # Plot using the calculated color
+                # Plot using the assigned color and linestyle
                 ax.plot(spectral_coords, spectrum_slice, label=legend_label, 
-                        color=plot_color, linewidth=2.5)
+                        color=color, linestyle=linestyle, linewidth=2.5)
 
         except KeyError:
             print(f"Warning: 'species_associated_spectra' not found in '{ds_label}'. Skipping.")
