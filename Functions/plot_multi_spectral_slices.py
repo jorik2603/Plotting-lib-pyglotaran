@@ -1,3 +1,9 @@
+import xarray as xr
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import colorsys
+
 def plot_species_associated_spectra(datasets, dataset_labels, xlim=None, ylim=None):
     """
     Plots species-associated spectra from one or more datasets.
