@@ -36,7 +36,7 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values, xlim=None,
     for ds, ds_label in zip(datasets, dataset_labels):
         spectral_coords = ds['spectral']
 
-        # --- NEW: Get the irf_center offset for the current dataset ---
+        # Get the irf_center offset for the current dataset ---
         try:
             irf_offset = ds['irf_center'].item()
         except (KeyError, AttributeError):
