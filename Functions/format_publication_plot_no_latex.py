@@ -88,6 +88,7 @@ def format_publication_plot_no_latex(ax,
     # 7. Add a subtle grid
     if grid_alpha > 0:
         ax.grid(True, which='major', linestyle='--', alpha=grid_alpha)
+    format_publication_plot_no_latex(ax=ax)
 
     # 8. Ensure tight layout to prevent labels from overlapping
     fig = ax.get_figure()

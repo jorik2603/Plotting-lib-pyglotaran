@@ -13,7 +13,7 @@ except ImportError:
     DEFAULT_CMAP = 'RdBu_r'
 
 def _apply_chirp_correction_to_data(data_array, time_coords, spectral_coords, 
-                                    irf_center_location_array):
+                                    irf_center_location_array,irf_width):
     """
     Applies chirp correction to the 2D data array using 1D interpolation
     along the time axis for each wavelength.
@@ -30,7 +30,7 @@ def _apply_chirp_correction_to_data(data_array, time_coords, spectral_coords,
         )
 
     for i in range(len(wv)):
-        correcttimeval = irf_center_location_array[i]
+        correcttimeval = irf_center_location_array[i]-irf_width-0.1
         f = interpolate.interp1d(
             (t - correcttimeval), 
             d[:, i],
@@ -55,7 +55,9 @@ def plot_heatmap(datasets, dataset_labels,
                  symlog_y_thresh=1.0,
                  xlim=None, ylim=None,
                  invert_y=False,
-                 layout='horizontal'):
+                 layout='horizontal',
+                 normalize=False,
+                 measurement_type="TA"):
     """
     Plots a 2D heatmap using Matplotlib directly, with layout and axis inversion.
 
@@ -94,6 +96,7 @@ def plot_heatmap(datasets, dataset_labels,
 
     # --- 2. Main loop over each dataset ---
     for ax, ds, label in zip(axes.flat, datasets, dataset_labels):
+    
         try:
             # Get the data array and coordinates
             data_array = ds[var_name]
@@ -105,9 +108,10 @@ def plot_heatmap(datasets, dataset_labels,
             # --- 3. Handle Chirp Correction (Z-Data) ---
             if apply_chirp_correction:
                 try:
+                    irf_width = ds['irf_width'].values
                     chirp_array_1d = ds['irf_center_location'].values
                     Z = _apply_chirp_correction_to_data(
-                        data_array, Y, X, chirp_array_1d.squeeze()
+                        data_array, Y, X, chirp_array_1d.squeeze(), irf_width
                     )
                 except KeyError:
                     print(f"Warning: 'irf_center_location' not found in '{label}'. Cannot apply chirp correction.")
@@ -119,7 +123,12 @@ def plot_heatmap(datasets, dataset_labels,
                 norm = mcolors.SymLogNorm(linthresh=symlog_z_thresh, vmin=vmin, vmax=vmax, base=10)
             else: # linear
                 norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-            
+                
+            if normalize:                  
+                norm_val = Z.max()
+                if norm_val != 0: # Avoid division by zero
+                    Z = Z / norm_val
+                            
             # --- 5. Plotting (using 1D X, 1D Y, 2D Z) ---
             if plot_type == 'contourf':
                 h = ax.contourf(
@@ -131,13 +140,18 @@ def plot_heatmap(datasets, dataset_labels,
                 )
             
             # --- 6. Add Colorbar Manually ---
-            cbar_label = f"{var_name} ({zscale} scale)"
-            fig.colorbar(h, ax=ax, label=cbar_label)
-            
+            if measurement_type == "TA":
+                cbar_label = "$\Delta A$ (mOD)"
+            else:
+                cbar_label = "I (A.U.)"
+
+            cbar = fig.colorbar(h, ax=ax, label=cbar_label)
+            for a in cbar.ax.get_yticklabels():
+                a.set_fontsize(18)
             # --- 7. Format Axes ---
             ax.set_title(label, fontsize=14)
-            ax.set_xlabel("Wavelength (nm)")
-            ax.set_ylabel(y_label)
+            ax.set_xlabel("Wavelength (nm)", fontsize=18)
+            ax.set_ylabel(y_label, fontsize=18)
 
             if yscale == 'symlog':
                 ax.set_yscale('symlog', linthresh=symlog_y_thresh)
@@ -157,11 +171,12 @@ def plot_heatmap(datasets, dataset_labels,
             print(f"Error plotting '{label}': {e}")
 
     # --- 8. Final Touches ---
-    title = f"Heatmap of {var_name}"
-    if apply_chirp_correction:
-        title += " (Chirp-Corrected Data)"
-    fig.suptitle(title, fontsize=16, y=1.03)
+    #title = f"Heatmap of {var_name}"
+    #if apply_chirp_correction:
+    #    title += " (Chirp-Corrected Data)"
+    #fig.suptitle(title, fontsize=20, y=1.03)
     plt.tight_layout()
+    #format_publication_plot_no_latex(ax=ax)
     plt.show()
 
     return fig, axes

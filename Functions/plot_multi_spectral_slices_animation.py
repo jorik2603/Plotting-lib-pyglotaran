@@ -3,8 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
+from scipy.signal import savgol_filter
 
-def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
+def plot_multi_spectral_slices_animation(datasets, dataset_labels, time_values,
                                measurement_type="TA", normalize=False, apply_chirp_correction=False,
                                xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0):
     """
@@ -20,6 +21,8 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
         xlim (tuple, optional): A tuple (min, max) for the x-axis limits.
         ylim (tuple, optional): A tuple (min, max) for the y-axis limits.
     """
+    ax.clear()
+    
     # --- 1. Validate inputs and set up plot ---
     if measurement_type not in ["TA", "TRPL"]:
         raise ValueError("measurement_type must be either 'TA' or 'TRPL'.")
@@ -27,7 +30,7 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
     if not isinstance(dataset_labels, list): dataset_labels = [dataset_labels]
     if not isinstance(time_values, list): time_values = [time_values]
 
-    fig, ax = plt.subplots(figsize=(12, 8))
+    #fig, ax = plt.subplots(figsize=(12, 8))
     
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     num_time_vals = len(time_values)
@@ -80,15 +83,12 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                 # option for normalization
                 if normalize:
                     # Find the value with the maximum absolute magnitude from the fit
-                    np_fitted = ds['data'].values
+                    np_fitted = fitted_slice.values
                     if np_fitted.size > 0:
                         norm_val = np_fitted[np.abs(np_fitted).argmax()]
                         if norm_val != 0: # Avoid division by zero
                             data_slice = data_slice / norm_val
                             fitted_slice = fitted_slice / norm_val
-                
-                if smoothing:
-                    fitted_slice = savgol_filter(data_slice, window_length=sg_window, polyorder=sg_order) 
 
                 # --- 4. Plotting logic (common for both types) ---
                 lightness_factor = 1.0
@@ -98,9 +98,10 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                 plot_color = colorsys.hls_to_rgb(h, max(0, min(1, l * lightness_factor)), s)
 
                 legend_label = f"{ds_label} (t={relative_time:.1f} ps)"
+                if smoothing:
+                    fitted_slice = savgol_filter(data_slice, window_length=sg_window, polyorder=sg_order) 
                 line, = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
                 ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
-
             except Exception as e:
                 print(f"Could not plot for {ds_label} at time {relative_time}: {e}")
 
@@ -123,6 +124,8 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
     ax.axhline(0, color='black', linewidth=0.5)
     if xlim: ax.set_xlim(xlim)
     if ylim: ax.set_ylim(ylim)
-    plt.tight_layout()
+    #plt.tight_layout()
+    #plt.close()
     #format_publication_plot_no_latex(ax=ax)
-    plt.show()
+    #return fig, ax
+    #plt.show()
