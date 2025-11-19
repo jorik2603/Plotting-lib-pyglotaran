@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
+from scipy.signal import savgol_filter
+
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                                measurement_type="TA", normalize=False, apply_chirp_correction=False,

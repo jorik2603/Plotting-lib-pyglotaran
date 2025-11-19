@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
+from scipy.signal import savgol_filter
 
 def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                            measurement_type="TA", normalize=False, apply_chirp_correction=False,
