@@ -56,8 +56,7 @@ def plot_heatmap(datasets, dataset_labels,
                  xlim=None, ylim=None,
                  invert_y=False,
                  layout='horizontal',
-                 normalize=False,
-                 measurement_type="TA"):
+                 export=False):
     """
     Plots a 2D heatmap using Matplotlib directly, with layout and axis inversion.
 
@@ -104,7 +103,10 @@ def plot_heatmap(datasets, dataset_labels,
             Y = ds['time'].values
             Z = data_array.values  # Z shape is (time, spectral)
             y_label = "Time (ps)"
-            
+            if export:
+                    export_var = ds["data"].to_dataframe()
+                    export_var.to_csv(label+"2d.csv")
+
             # --- 3. Handle Chirp Correction (Z-Data) ---
             if apply_chirp_correction:
                 try:
@@ -123,12 +125,7 @@ def plot_heatmap(datasets, dataset_labels,
                 norm = mcolors.SymLogNorm(linthresh=symlog_z_thresh, vmin=vmin, vmax=vmax, base=10)
             else: # linear
                 norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-                
-            if normalize:                  
-                norm_val = Z.max()
-                if norm_val != 0: # Avoid division by zero
-                    Z = Z / norm_val
-                            
+            
             # --- 5. Plotting (using 1D X, 1D Y, 2D Z) ---
             if plot_type == 'contourf':
                 h = ax.contourf(
@@ -140,11 +137,7 @@ def plot_heatmap(datasets, dataset_labels,
                 )
             
             # --- 6. Add Colorbar Manually ---
-            if measurement_type == "TA":
-                cbar_label = "$\Delta A$ (mOD)"
-            else:
-                cbar_label = "I (A.U.)"
-
+            cbar_label = "$\Delta A$ (mOD)"
             cbar = fig.colorbar(h, ax=ax, label=cbar_label)
             for a in cbar.ax.get_yticklabels():
                 a.set_fontsize(18)

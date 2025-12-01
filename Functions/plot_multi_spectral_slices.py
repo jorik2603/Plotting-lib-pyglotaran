@@ -3,10 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
+from pathlib import Path
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
-                               measurement_type="TA", normalize=False, apply_chirp_correction=False,
-                               xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0):
+                               measurement_type="TA", apply_chirp_correction=False,legend=True,
+                               xlim=None, ylim=None,export=False,export_folder="slices"):
     """
     Plots spectral slices with specific logic for TA or TRPL measurements.
 
@@ -27,7 +28,7 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
     if not isinstance(dataset_labels, list): dataset_labels = [dataset_labels]
     if not isinstance(time_values, list): time_values = [time_values]
 
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(8, 6))
     
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     num_time_vals = len(time_values)
@@ -77,19 +78,6 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                         data_slice = ds['data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
                         fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
 
-                # option for normalization
-                if normalize:
-                    # Find the value with the maximum absolute magnitude from the fit
-                    np_fitted = ds['data'].values
-                    if np_fitted.size > 0:
-                        norm_val = np_fitted[np.abs(np_fitted).argmax()]
-                        if norm_val != 0: # Avoid division by zero
-                            data_slice = data_slice / norm_val
-                            fitted_slice = fitted_slice / norm_val
-                
-                if smoothing:
-                    fitted_slice = savgol_filter(data_slice, window_length=sg_window, polyorder=sg_order) 
-
                 # --- 4. Plotting logic (common for both types) ---
                 lightness_factor = 1.0
                 if num_time_vals > 1:
@@ -100,6 +88,12 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                 legend_label = f"{ds_label} (t={relative_time:.1f} ps)"
                 line, = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
                 ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
+                if export:
+                    path = Path(export_folder)
+                    path.mkdir(parents=True, exist_ok=True)
+                    export_var = data_slice.to_dataframe()
+                    export_var.to_csv(export_folder+"/"+legend_label+"spectrum.csv")
+                    
 
             except Exception as e:
                 print(f"Could not plot for {ds_label} at time {relative_time}: {e}")
@@ -107,18 +101,17 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
     # --- 5. Final plot formatting ---
     title = f"Spectral Slices ({measurement_type} Mode)"
     legend_title = "Dataset (Time)"
-    if measurement_type == "TA":
-        ax.set_ylabel("ΔA (mOD)")
-        if apply_chirp_correction:
-            title = "Chirp-Corrected Spectral Slices (TA Mode)"
-            legend_title = "Dataset (Time relative to t₀)"
+    if measurement_type == "TA" and apply_chirp_correction:
+        title = "Chirp-Corrected Spectral Slices (TA Mode)"
+        legend_title = "Dataset (Time relative to t₀)"
     elif measurement_type == "TRPL":
-        ax.set_ylabel("I (A.U.)")
         legend_title = "Dataset (Time relative to IRF)"
         
     #ax.set_title(title)
     ax.set_xlabel("Wavelength (nm)")
-    ax.legend(title=legend_title)
+    ax.set_ylabel("ΔA (mOD)")
+    if legend:
+        ax.legend()
     #ax.grid(True, which='both', linestyle='--', linewidth=0.5)
     ax.axhline(0, color='black', linewidth=0.5)
     if xlim: ax.set_xlim(xlim)

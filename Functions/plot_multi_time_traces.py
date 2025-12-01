@@ -1,12 +1,15 @@
 import xarray as xr
+from scipy.signal import savgol_filter
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
+from pathlib import Path
 
 def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                            measurement_type="TA", normalize=False, apply_chirp_correction=False,
-                           xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0):
+                           xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0, symlog=False,
+                           linthresh=1, export=False, export_folder="time_traces"):
     """
     Plots time traces with specific time-zero logic for TA or TRPL measurements.
 
@@ -26,7 +29,7 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
     if not isinstance(dataset_labels, list): dataset_labels = [dataset_labels]
     if not isinstance(spectral_values, list): spectral_values = [spectral_values]
 
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(8, 6))
     
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     num_spec_vals = len(spectral_values)
@@ -88,6 +91,8 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                     np_fitted = fitted_slice.values
                     if np_fitted.size > 0:
                         norm_val = np_fitted[np.abs(np_fitted).argmax()]
+                        if np.abs(np_fitted).argmax() != np_fitted.argmax():
+                            norm_val = -1*norm_val
                         if norm_val != 0: # Avoid division by zero
                             data_slice = data_slice / norm_val
                             fitted_slice = fitted_slice / norm_val
@@ -97,6 +102,11 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                     
                 line, = ax.plot(time_coords_for_plot, fitted_slice, label=legend_label, color=plot_color, linewidth=2)
                 ax.scatter(time_coords_for_plot, data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
+                if export:
+                    path = Path(export_folder)
+                    path.mkdir(parents=True, exist_ok=True)
+                    export_var = data_slice.to_dataframe()
+                    export_var.to_csv(export_folder+"/"+legend_label+"extracted.csv")
 
             except Exception as e:
                 print(f"Could not plot for {ds_label} at {spec_val}: {e}")
@@ -111,13 +121,14 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
     #ax.set_title(f"Time Traces at Specific Wavelengths ({measurement_type} Mode)")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    ax.legend(title="Dataset (Wavelength)")
+    ax.legend()
+    if symlog:
+        ax.set_yscale('symlog', linthresh=linthresh)
     #ax.grid(True, which='both', linestyle='--', linewidth=0.5)
     ax.axhline(0, color='black', linewidth=0.5)
     if xlim: ax.set_xlim(xlim)
     if ylim: ax.set_ylim(ylim)
     #format_publication_plot_no_latex(ax=ax)
-
     plt.tight_layout()
     plt.show()
   
