@@ -17,43 +17,54 @@ def format_publication_plot_no_latex(ax,
                                      tick_direction='in',
                                      spine_color='black'):
     """
-    Formats a matplotlib Axes object for a scientific publication
-    without requiring a LaTeX installation.
+    Formats a matplotlib Axes object for scientific publication without requiring LaTeX.
 
-    This function uses Matplotlib's built-in font handling and 'mathtext'
-    engine for mathematical expressions.
+    This function applies a cleaner style using Matplotlib's 'mathtext' engine for
+    mathematical expressions and STIX fonts, which mimic the look of LaTeX documents.
 
-    Args:
-        ax (matplotlib.axes.Axes): The Axes object to format.
-        title (str, optional): The title of the plot. Defaults to None.
-        xlabel (str, optional): The label for the x-axis. Supports mathtext
-                                (e.g., r'$\\alpha_{lim}$'). Defaults to None.
-        ylabel (str, optional): The label for the y-axis. Supports mathtext.
-                                Defaults to None.
-        title_fontsize (int, optional): Font size for the title. Defaults to 14.
-        label_fontsize (int, optional): Font size for axis labels. Defaults to 12.
-        tick_fontsize (int, optional): Font size for tick labels. Defaults to 10.
-        legend_fontsize (int, optional): Font size for the legend. Defaults to 10.
-        font_family (str, optional): The font family to use ('serif', 'sans-serif').
-                                     Defaults to 'serif'.
-        show_legend (bool, optional): Whether to display the legend.
-                                      Defaults to True.
-        legend_loc (str, optional): The location of the legend.
-                                    Defaults to 'best'.
-        line_width (float, optional): The width for plotted lines. Defaults to 1.5.
-        grid_alpha (float, optional): Transparency of the grid. Set to 0 for no grid.
-                                      Defaults to 0.2.
-        tick_direction (str, optional): Direction of axis ticks ('in', 'out', 'inout').
-                                        Defaults to 'in'.
-        spine_color (str, optional): Color of the plot's border spines.
-                                     Defaults to 'black'.
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The Axes object to format.
+    title : str, optional
+        The title of the plot.
+    xlabel : str, optional
+        The label for the x-axis. Supports mathtext (e.g., r'$\\alpha_{lim}$').
+    ylabel : str, optional
+        The label for the y-axis. Supports mathtext.
+    title_fontsize : int, optional
+        Font size for the title. Default is 14.
+    label_fontsize : int, optional
+        Font size for axis labels. Default is 18.
+    tick_fontsize : int, optional
+        Font size for tick labels. Default is 18.
+    legend_fontsize : int, optional
+        Font size for the legend. Default is 18.
+    font_family : str, optional
+        The font family to use ('serif', 'sans-serif'). Default is 'serif'.
+    show_legend : bool, optional
+        Whether to display the legend. Default is True.
+    legend_loc : str, optional
+        The location code for the legend. Default is 'best'.
+    line_width : float, optional
+        The width for plotted lines. Default is 1.5.
+    grid_alpha : float, optional
+        Transparency of the grid. Set to 0 for no grid. Default is 0.2.
+    tick_direction : str, optional
+        Direction of axis ticks ('in', 'out', 'inout'). Default is 'in'.
+    spine_color : str, optional
+        Color of the plot's border spines. Default is 'black'.
+
+    Returns
+    -------
+    None
+        Modifies the provided Axes object in-place.
     """
-    # 1. Set font properties for a professional look
-    # Uses STIX fonts which are designed for scientific publishing
+    # Set font properties for a professional look (STIX fonts)
     plt.rcParams['font.family'] = font_family
-    plt.rcParams['mathtext.fontset'] = 'stix' # Or 'cm' for Computer Modern look
+    plt.rcParams['mathtext.fontset'] = 'stix'
 
-    # 2. Set labels and title with specified font sizes
+    # Set labels and title
     if xlabel:
         ax.set_xlabel(xlabel, fontsize=label_fontsize)
     if ylabel:
@@ -61,35 +72,33 @@ def format_publication_plot_no_latex(ax,
     if title:
         ax.set_title(title, fontsize=title_fontsize, weight='bold')
 
-    # 3. Customize ticks
-    ax.tick_params(axis='both',
-                   which='major',
-                   labelsize=tick_fontsize,
-                   direction=tick_direction)
-    ax.tick_params(axis='both',
-                   which='minor',
-                   direction=tick_direction)
+    # Customize ticks
+    ax.tick_params(axis='both', which='major', labelsize=tick_fontsize, direction=tick_direction)
+    ax.tick_params(axis='both', which='minor', direction=tick_direction)
 
-    # 4. Customize spines (the plot border) for a cleaner look
+    # Customize spines (cleaner borders)
     for spine in ['top', 'right']:
         ax.spines[spine].set_visible(False)
     for spine in ['left', 'bottom']:
         ax.spines[spine].set_color(spine_color)
         ax.spines[spine].set_linewidth(1)
 
-    # 5. Customize plotted lines
+    # Customize plotted lines
     for line in ax.get_lines():
         line.set_linewidth(line_width)
 
-    # 6. Customize legend
-    if show_legend and ax.get_legend_handles_labels()[0]:
-        ax.legend(fontsize=legend_fontsize, loc=legend_loc, frameon=False)
+    # Customize legend
+    if show_legend:
+        # Check if there are labeled handles to create a legend for
+        handles, labels = ax.get_legend_handles_labels()
+        if handles:
+            ax.legend(fontsize=legend_fontsize, loc=legend_loc, frameon=False)
 
-    # 7. Add a subtle grid
+    # Add grid
     if grid_alpha > 0:
         ax.grid(True, which='major', linestyle='--', alpha=grid_alpha)
-    format_publication_plot_no_latex(ax=ax)
 
-    # 8. Ensure tight layout to prevent labels from overlapping
+    # Ensure tight layout
     fig = ax.get_figure()
-    fig.tight_layout()
+    if fig:
+        fig.tight_layout()
