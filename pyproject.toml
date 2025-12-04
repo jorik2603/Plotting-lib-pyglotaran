@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyglotaran-plotting"
+version = "0.1.0"
+description = "Functions for plotting pyglotaran results"
+readme = "README.md"
+authors = [{ name = "jorik2603" }]
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "xarray",
+    "scipy",
+    "pyglotaran",
+    "pyglotaran-extras",
+    "numba",
+    "cmcrameri", 
+]
+
+[project.urls]
+"Homepage" = "https://github.com/jorik2603/plotting-lib-pyglotaran"
+
+[tool.setuptools.packages.find]
+where = ["src"]
