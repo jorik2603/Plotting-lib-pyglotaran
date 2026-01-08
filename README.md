@@ -27,7 +27,7 @@
 You can install the package directly from the repository:
 
 ```bash
-pip install git+[https://github.com/jorik2603/plotting-lib-pyglotaran.git](https://github.com/jorik2603/plotting-lib-pyglotaran.git)
+pip install git+https://github.com/jorik2603/plotting-lib-pyglotaran.git
 ```
 
 Or, if you have cloned the repository locally:
