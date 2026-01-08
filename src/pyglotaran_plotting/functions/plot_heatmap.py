@@ -9,44 +9,18 @@ try:
     import cmcrameri.cm as cmc
     DEFAULT_CMAP = cmc.vik
 except ImportError:
-    print("Warning: 'cmcrameri' library not found. Falling back to 'RdBu_r' colormap.")
+    print("Warning: 'cmcrameri' library not found. Falling back to 'RdBu_r' colormap. Run 'pip install cmcrameri' for perceptually uniform colormaps.")
     DEFAULT_CMAP = 'RdBu_r'
 
 def _apply_chirp_correction_to_data(data_array, time_coords, spectral_coords, 
-                                    irf_center_location_array, irf_width):
+                                    irf_center_location_array,irf_width):
     """
-    Applies chirp correction to a 2D data array using 1D interpolation.
-
-    This shifts the data along the time axis for each wavelength based on the 
-    IRF center location (the "chirp"), effectively aligning time-zero across 
-    all wavelengths.
-
-    Parameters
-    ----------
-    data_array : xarray.DataArray
-        The 2D data (Time x Spectral).
-    time_coords : numpy.ndarray
-        Array of time coordinate values.
-    spectral_coords : numpy.ndarray
-        Array of spectral coordinate values.
-    irf_center_location_array : numpy.ndarray
-        Array containing the IRF center location (time-zero) for each spectral point.
-    irf_width : float
-        The width of the IRF, used as an offset.
-
-    Returns
-    -------
-    numpy.ndarray
-        The chirp-corrected 2D data array.
-
-    Raises
-    ------
-    ValueError
-        If the length of the chirp data does not match the spectral coordinates.
+    Applies chirp correction to the 2D data array using 1D interpolation
+    along the time axis for each wavelength.
     """
     t = time_coords
     wv = spectral_coords
-    d = data_array.values  # Shape: (time, spectral)
+    d = data_array.values  # Shape (time, spectral)
     d_corr = np.zeros_like(d)
 
     if len(wv) != len(irf_center_location_array):
@@ -56,10 +30,7 @@ def _apply_chirp_correction_to_data(data_array, time_coords, spectral_coords,
         )
 
     for i in range(len(wv)):
-        # Calculate the corrected time origin
-        correcttimeval = irf_center_location_array[i] - irf_width - 0.1
-        
-        # Interpolate data to the new time axis
+        correcttimeval = irf_center_location_array[i]-irf_width-0.1
         f = interpolate.interp1d(
             (t - correcttimeval), 
             d[:, i],
@@ -85,57 +56,18 @@ def plot_heatmap(datasets, dataset_labels,
                  xlim=None, ylim=None,
                  invert_y=False,
                  layout='horizontal',
-                 normalize=False,
-                 measurement_type="TA"):
+                 export=False):
     """
-    Plots 2D heatmaps for one or multiple datasets.
+    Plots a 2D heatmap using Matplotlib directly, with layout and axis inversion.
 
-    Supports chirp correction, various scaling options (symlog/linear), and 
-    flexible layouts.
-
-    Parameters
-    ----------
-    datasets : list or xarray.Dataset
-        Single dataset or list of datasets to plot.
-    dataset_labels : list or str
-        Labels corresponding to the datasets.
-    var_name : str, optional
-        Variable to plot (e.g., 'fitted_data', 'data'). Default is 'fitted_data'.
-    plot_type : str, optional
-        'pcolormesh' (heatmap) or 'contourf' (filled contours). Default is 'pcolormesh'.
-    levels : int, optional
-        Number of levels for contourf plots. Default is 20.
-    apply_chirp_correction : bool, optional
-        If True, visually corrects for the IRF chirp (time-zero dispersion). Default is False.
-    zscale : str, optional
-        Scaling for the color axis ('linear' or 'symlog'). Default is 'symlog'.
-    symlog_z_thresh : float, optional
-        Linear threshold for symlog Z scaling. Default is 0.01.
-    vmin, vmax : float, optional
-        Min/Max values for color scaling.
-    cmap : Colormap, optional
-        Matplotlib colormap. Default is cmc.vik or 'RdBu_r'.
-    yscale : str, optional
-        Y-axis scaling ('linear' or 'symlog'). Default is 'linear'.
-    symlog_y_thresh : float, optional
-        Linear threshold for symlog Y scaling. Default is 1.0.
-    xlim, ylim : tuple, optional
-        Limits for x (spectral) and y (time) axes.
-    invert_y : bool, optional
-        If True, inverts the Y-axis. Default is False.
-    layout : str, optional
-        'horizontal' or 'vertical' arrangement of subplots. Default is 'horizontal'.
-    normalize : bool, optional
-        If True, normalizes data to the maximum value. Default is False.
-    measurement_type : str, optional
-        'TA' (Transient Absorption) or other. Affects colorbar label. Default is "TA".
-
-    Returns
-    -------
-    tuple
-        (fig, axes) The figure and array of axes objects.
+    Args:
+        ... (standard args) ...
+        invert_y (bool): If True, inverts the y-axis (time). Defaults to False.
+        layout (str): 'horizontal' (side-by-side) or 'vertical' (stacked)
+                      subplot arrangement. Defaults to 'horizontal'.
     """
-    # Standardize inputs to lists
+    
+    # --- 1. Standardize inputs ---
     if not isinstance(datasets, list):
         datasets = [datasets]
     if not isinstance(dataset_labels, list):
@@ -146,11 +78,11 @@ def plot_heatmap(datasets, dataset_labels,
     
     n_datasets = len(datasets)
 
-    # Setup layout
+    # --- NEW: Handle plot layout ---
     if layout == 'vertical':
         nrows, ncols = n_datasets, 1
-        figsize = (8, 6 * n_datasets)
-    else:
+        figsize = (8, 6 * n_datasets)  # (width, height)
+    else:  # default to 'horizontal'
         nrows, ncols = 1, n_datasets
         figsize = (7 * n_datasets, 6)
 
@@ -161,16 +93,21 @@ def plot_heatmap(datasets, dataset_labels,
         squeeze=False
     )
 
-    # Main loop over datasets
+    # --- 2. Main loop over each dataset ---
     for ax, ds, label in zip(axes.flat, datasets, dataset_labels):
+    
         try:
+            # Get the data array and coordinates
             data_array = ds[var_name]
             X = ds['spectral'].values
             Y = ds['time'].values
-            Z = data_array.values  # Shape: (time, spectral)
+            Z = data_array.values  # Z shape is (time, spectral)
             y_label = "Time (ps)"
-            
-            # Apply Chirp Correction
+            if export:
+                    export_var = ds["data"].to_dataframe()
+                    export_var.to_csv(label+"2d.csv")
+
+            # --- 3. Handle Chirp Correction (Z-Data) ---
             if apply_chirp_correction:
                 try:
                     irf_width = ds['irf_width'].values
@@ -179,34 +116,32 @@ def plot_heatmap(datasets, dataset_labels,
                         data_array, Y, X, chirp_array_1d.squeeze(), irf_width
                     )
                 except KeyError:
-                    print(f"Warning: 'irf_center_location' not found in '{label}'. Skipping chirp correction.")
+                    print(f"Warning: 'irf_center_location' not found in '{label}'. Cannot apply chirp correction.")
                 except Exception as e:
-                    print(f"Warning: Chirp correction failed for '{label}': {e}. Plotting uncorrected data.")
+                    print(f"Warning: Failed to apply chirp correction for '{label}': {e}. Plotting uncorrected data.")
             
-            # Configure Color Scale
+            # --- 4. Handle Color Scale (Z-Coordinate) ---
             if zscale == 'symlog':
                 norm = mcolors.SymLogNorm(linthresh=symlog_z_thresh, vmin=vmin, vmax=vmax, base=10)
-            else:
+            else: # linear
                 norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-                
-            if normalize:                  
-                norm_val = np.max(np.abs(Z))
-                if norm_val != 0:
-                    Z = Z / norm_val
-                            
-            # Plot Data
-            if plot_type == 'contourf':
-                h = ax.contourf(X, Y, Z, levels=levels, cmap=cmap, norm=norm)
-            else:
-                h = ax.pcolormesh(X, Y, Z, cmap=cmap, norm=norm, shading='auto')
             
-            # Add Colorbar
-            cbar_label = "$\Delta A$ (mOD)" if measurement_type == "TA" else "I (A.U.)"
+            # --- 5. Plotting (using 1D X, 1D Y, 2D Z) ---
+            if plot_type == 'contourf':
+                h = ax.contourf(
+                    X, Y, Z, levels=levels, cmap=cmap, norm=norm
+                )
+            else: # default to pcolormesh
+                h = ax.pcolormesh(
+                    X, Y, Z, cmap=cmap, norm=norm, shading='auto'
+                )
+            
+            # --- 6. Add Colorbar Manually ---
+            cbar_label = "$\Delta A$ (mOD)"
             cbar = fig.colorbar(h, ax=ax, label=cbar_label)
             for a in cbar.ax.get_yticklabels():
                 a.set_fontsize(18)
-
-            # Format Axes
+            # --- 7. Format Axes ---
             ax.set_title(label, fontsize=14)
             ax.set_xlabel("Wavelength (nm)", fontsize=18)
             ax.set_ylabel(y_label, fontsize=18)
@@ -218,14 +153,23 @@ def plot_heatmap(datasets, dataset_labels,
             
             if xlim: ax.set_xlim(xlim)
             if ylim: ax.set_ylim(ylim)
-            if invert_y: ax.invert_yaxis()
+
+            # --- NEW: Invert Y-axis if requested ---
+            if invert_y:
+                ax.invert_yaxis()
 
         except KeyError:
             print(f"Warning: Variable '{var_name}' not found in '{label}'. Skipping.")
         except Exception as e:
             print(f"Error plotting '{label}': {e}")
 
+    # --- 8. Final Touches ---
+    #title = f"Heatmap of {var_name}"
+    #if apply_chirp_correction:
+    #    title += " (Chirp-Corrected Data)"
+    #fig.suptitle(title, fontsize=20, y=1.03)
     plt.tight_layout()
+    #format_publication_plot_no_latex(ax=ax)
     plt.show()
 
     return fig, axes

@@ -3,114 +3,82 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
-from scipy.signal import savgol_filter
+from pathlib import Path
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
-                               measurement_type="TA", normalize=False, apply_chirp_correction=False,
-                               xlim=None, ylim=None, smoothing=False, sg_window=5, sg_order=0):
+                               measurement_type="TA", apply_chirp_correction=False,legend=True,
+                               xlim=None, ylim=None,export=False,export_folder="slices"):
     """
-    Plots spectral slices (spectra at specific times) for multiple datasets.
+    Plots spectral slices with specific logic for TA or TRPL measurements.
 
-    Handles different logic for Transient Absorption (TA) and Time-Resolved Photoluminescence (TRPL),
-    including automatic chirp correction and normalization.
-
-    Parameters
-    ----------
-    datasets : list or xarray.Dataset
-        The dataset(s) containing the data.
-    dataset_labels : list or str
-        Label(s) for the dataset(s).
-    time_values : list or float
-        The specific time points (in ps) at which to slice the spectra.
-    measurement_type : str, optional
-        "TA" or "TRPL". Determines how time-zero and IRF offsets are handled. Default is "TA".
-    normalize : bool, optional
-        If True, normalizes the slices to the dataset's maximum intensity. Default is False.
-    apply_chirp_correction : bool, optional
-        (TA only) If True, adjusts the slicing time based on the wavelength-dependent IRF center.
-        Default is False.
-    xlim, ylim : tuple, optional
-        Limits for the x (wavelength) and y (intensity) axes.
-    smoothing : bool, optional
-        If True, applies Savitzky-Golay smoothing to the data. Default is False.
-    sg_window : int, optional
-        Window length for smoothing. Default is 5.
-    sg_order : int, optional
-        Polynomial order for smoothing. Default is 0.
-
-    Returns
-    -------
-    None
-        Displays the plot.
+    Args:
+        datasets (list): A list of datasets.
+        dataset_labels (list): A list of labels for the datasets.
+        time_values (list): Time values to plot. Interpretation depends on measurement_type.
+        measurement_type (str): "TA" or "TRPL". Determines how time-zero is defined.
+        apply_chirp_correction (bool): If True and type is "TA", applies a
+                                       spectrally-dependent time shift.
+        xlim (tuple, optional): A tuple (min, max) for the x-axis limits.
+        ylim (tuple, optional): A tuple (min, max) for the y-axis limits.
     """
-    # Validate inputs
+    # --- 1. Validate inputs and set up plot ---
     if measurement_type not in ["TA", "TRPL"]:
         raise ValueError("measurement_type must be either 'TA' or 'TRPL'.")
     if not isinstance(datasets, list): datasets = [datasets]
     if not isinstance(dataset_labels, list): dataset_labels = [dataset_labels]
     if not isinstance(time_values, list): time_values = [time_values]
 
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(8, 6))
     
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     num_time_vals = len(time_values)
 
-    # Loop through datasets
+    # --- 2. Iterate through datasets and time values ---
     for i, (ds, ds_label) in enumerate(zip(datasets, dataset_labels)):
         base_color = colors[i % len(colors)]
         
-        # Get IRF width offset if available
         try:
             irf_width_offset = ds['irf_width'].item()
         except KeyError:
             print(f"Warning: 'irf_width' not found in '{ds_label}'. Assuming width offset is 0.")
             irf_width_offset = 0
         
-        # Loop through requested time points
         for j, relative_time in enumerate(time_values):
+            # --- 3. Determine selection time based on measurement_type ---
             try:
-                # Logic for determining the absolute time to slice
+                # --- TA Logic ---
                 if measurement_type == "TA":
                     if apply_chirp_correction:
                         try:
                             chirp_data = ds['irf_center_location']
-                            # Calculate time per wavelength
+                            # UPDATED: Added - irf_width_offset
                             absolute_times_to_select = relative_time + chirp_data - irf_width_offset
                             data_slice = ds['data'].sel(time=absolute_times_to_select, method='nearest').squeeze()
                             fitted_slice = ds['fitted_data'].sel(time=absolute_times_to_select, method='nearest').squeeze()
                         except KeyError:
-                            print(f"Warning: 'irf_center_location' missing in '{ds_label}'. Skipping chirp correction.")
+                            print(f"Warning: 'irf_center_location' not found in '{ds_label}'. Cannot apply chirp correction.")
                             continue
                     else:
+                        # Unchanged: No offset for TA without chirp correction
                         absolute_time_to_select = relative_time
                         data_slice = ds['data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
                         fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
 
+                # --- TRPL Logic ---
                 elif measurement_type == "TRPL":
                     try:
                         irf_offset = ds['irf_center'].item()
+                        # UPDATED: Added - irf_width_offset
                         absolute_time_to_select = relative_time + irf_offset - irf_width_offset
+                        data_slice = ds['data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
+                        fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
                     except KeyError:
-                        print(f"Warning: 'irf_center' missing in '{ds_label}'. Assuming offset is 0.")
+                        print(f"Warning: 'irf_center' not found in '{ds_label}' for TRPL mode. Assuming offset is 0.")
                         absolute_time_to_select = relative_time - irf_width_offset
-                    
-                    data_slice = ds['data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
-                    fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
+                        data_slice = ds['data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
+                        fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
 
-                # Normalization
-                if normalize:
-                    np_data = ds['data'].values
-                    if np_data.size > 0:
-                        norm_val = np_data[np.abs(np_data).argmax()]
-                        if norm_val != 0:
-                            data_slice = data_slice / norm_val
-                            fitted_slice = fitted_slice / norm_val
-                
-                # Smoothing
-                if smoothing:
-                    fitted_slice = savgol_filter(fitted_slice, window_length=sg_window, polyorder=sg_order) 
-
-                # Color logic: varied lightness for different time points
+                # --- 4. Plotting logic (common for both types) ---
                 lightness_factor = 1.0
                 if num_time_vals > 1:
                     lightness_factor = 0.7 + (j / (num_time_vals - 1)) * 0.6
@@ -118,30 +86,36 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                 plot_color = colorsys.hls_to_rgb(h, max(0, min(1, l * lightness_factor)), s)
 
                 legend_label = f"{ds_label} (t={relative_time:.1f} ps)"
-                
-                # Plotting
                 line, = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
                 ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
+                if export:
+                    path = Path(export_folder)
+                    path.mkdir(parents=True, exist_ok=True)
+                    export_var = data_slice.to_dataframe()
+                    export_var.to_csv(export_folder+"/"+legend_label+"spectrum.csv")
+                    
 
             except Exception as e:
                 print(f"Could not plot for {ds_label} at time {relative_time}: {e}")
 
-    # Formatting
+    # --- 5. Final plot formatting ---
+    title = f"Spectral Slices ({measurement_type} Mode)"
     legend_title = "Dataset (Time)"
-    if measurement_type == "TA":
-        ax.set_ylabel("ΔA (mOD)")
-        if apply_chirp_correction:
-            legend_title = "Dataset (Time relative to t₀)"
+    if measurement_type == "TA" and apply_chirp_correction:
+        title = "Chirp-Corrected Spectral Slices (TA Mode)"
+        legend_title = "Dataset (Time relative to t₀)"
     elif measurement_type == "TRPL":
-        ax.set_ylabel("I (A.U.)")
         legend_title = "Dataset (Time relative to IRF)"
         
+    #ax.set_title(title)
     ax.set_xlabel("Wavelength (nm)")
-    ax.legend(title=legend_title)
+    ax.set_ylabel("ΔA (mOD)")
+    if legend:
+        ax.legend()
+    #ax.grid(True, which='both', linestyle='--', linewidth=0.5)
     ax.axhline(0, color='black', linewidth=0.5)
-    
     if xlim: ax.set_xlim(xlim)
     if ylim: ax.set_ylim(ylim)
-    
     plt.tight_layout()
+    #format_publication_plot_no_latex(ax=ax)
     plt.show()
