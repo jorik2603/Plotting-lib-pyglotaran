@@ -13,6 +13,7 @@
 ## Installation
 
 ### Prerequisites
+
 * Python >= 3.9
 * pyglotaran
 * pyglotaran-extras
@@ -128,6 +129,7 @@ pyp.plot_decomposition(
 ```
 
 ### 7. Advanced Modeling: Delayed Damped Oscillation
+
 This library includes a custom megacomplex DelayDampedOscillationMegacomplex. To use it in your pyglotaran models, you must register it first.
 
 ```python
