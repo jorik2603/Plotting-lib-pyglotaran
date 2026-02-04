@@ -11,7 +11,7 @@ from pyglotaran_extras.plotting.utils import (
 )
 
 
-def plot_decomposition(result, dataname, wavelength):
+def plot_decomposition(result, dataname, wavelength, symlog = False, linthresh=1):
     """
     Processes and plots the decomposition of transient absorption data for a specific wavelength.
 
@@ -113,7 +113,8 @@ def plot_decomposition(result, dataname, wavelength):
         shifted_trace.plot(x="time", ax=ax, label=key)
 
     # 6. Customize the plot axes and labels
-    ax.set_xscale("symlog", linthresh=10)
+    if symlog:
+        ax.set_xscale("symlog", linthresh=linthresh)
     ax.xaxis.set_minor_locator(MinorSymLogLocator(1e-9)) # Adjusted for symlog
     
     ax.legend(

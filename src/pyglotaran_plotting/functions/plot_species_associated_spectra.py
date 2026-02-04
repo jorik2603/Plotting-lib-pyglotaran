@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
 
-def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None):
+def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, normalize=False):
     """
     Plots selected species-associated spectra from one or more datasets.
 
@@ -67,6 +67,10 @@ def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=No
                 spectrum_slice = sas.sel(species=species_name)
                 legend_label = f"{ds_label}" #({species_name})"
                 
+                if normalize:
+                    norm_val = spectrum_slice[np.abs(spectrum_slice).argmax()]
+                    spectrum_slice = spectrum_slice / norm_val
+                            
                 ax.plot(spectral_coords, spectrum_slice, label=legend_label, 
                         color=plot_color, linewidth=2.5)
 
