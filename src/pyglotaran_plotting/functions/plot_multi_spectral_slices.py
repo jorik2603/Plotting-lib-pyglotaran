@@ -6,7 +6,7 @@ import colorsys
 from pathlib import Path
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
-                               measurement_type="TA", apply_chirp_correction=False,legend=True,
+                               measurement_type="TA", plot_raw = False, apply_chirp_correction=False,legend=True,
                                xlim=None, ylim=None,export=False,export_folder="slices"):
     """
     Plots spectral slices with specific logic for TA or TRPL measurements.
@@ -86,8 +86,11 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                 plot_color = colorsys.hls_to_rgb(h, max(0, min(1, l * lightness_factor)), s)
 
                 legend_label = f"{ds_label} (t={relative_time:.1f} ps)"
-                line, = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
-                ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
+                if plot_raw:
+                    line, = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
+                else:
+                    line, = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
+                    ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
                 if export:
                     path = Path(export_folder)
                     path.mkdir(parents=True, exist_ok=True)
