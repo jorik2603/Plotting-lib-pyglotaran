@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyglotaran-plotting"
-version = "0.2.3"
+version = "0.2.4"
 description = "Library for enhancing the capibilities of pyglotaran"
 readme = "README.md"
 authors = [{ name = "Jorik Schaap" }]
