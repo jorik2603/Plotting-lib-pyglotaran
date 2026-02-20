@@ -1,3 +1,10 @@
+import pyglotaran_plotting.functions.plot_heatmap
+
+import xarray as xr
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+
 def calculate_difference_dataset(ds_target, ds_reference, var_name="fitted_data", apply_chirp=True):
     """
     Calculates the difference between two datasets (Target - Reference).
