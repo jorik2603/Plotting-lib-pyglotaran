@@ -7,7 +7,7 @@ import colorsys
 from pathlib import Path
 
 def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
-                           measurement_type="TA", normalize=False, normalize_raw=False, apply_chirp_correction=False,
+                           measurement_type="TA", normalize=False, normalize_raw=False, rescale=False, apply_chirp_correction=False,
                            xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0, symlog=False,
                            linthresh=1, export=False, export_folder="time_traces"):
     """
@@ -22,6 +22,7 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                                        spectrally-dependent time shift.
         normalize (bool): If True plots normalized data, baseed on the fit result.
         normalize_raw bool: If True uses raw data values for normalization. 
+        rescale (bool): If True will rescale normalization based on min/max values of the fit
         xlim (tuple, optional): A tuple (min, max) for the x-axis limits.
         ylim (tuple, optional): A tuple (min, max) for the y-axis limits.
     """
@@ -100,8 +101,13 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                         if np.abs(np_fitted).argmax() != np_fitted.argmax():
                             norm_val = -1*norm_val
                         if norm_val != 0: # Avoid division by zero
-                            data_slice = data_slice / norm_val
-                            fitted_slice = fitted_slice / norm_val
+                            if rescale:
+                                min_val = np_fitted[np.abs(np_fitted).argmin()]
+                                data_slice = (data_slice - min_val) / (norm_val - min_val)
+                                fitted_slice = (fitted_slice - min_val) / (norm_val - min_val)
+                            else:
+                                data_slice = data_slice / norm_val
+                                fitted_slice = fitted_slice / norm_val
                             
                 if smoothing:
                     fitted_slice = savgol_filter(data_slice, window_length=sg_window, polyorder=sg_order) 
