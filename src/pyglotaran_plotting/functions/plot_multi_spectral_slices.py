@@ -32,9 +32,11 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
     if not isinstance(dataset_labels, list): dataset_labels = [dataset_labels]
     if not isinstance(time_values, list): time_values = [time_values]
 
-    fig, ax = plt.subplots(figsize=(8, 6))
     if broken_axes:
-        ax = brokenaxes(xlims=broken_xlims, wspace=0.1)
+        fig = plt.figure(figsize=(8, 6))
+        ax = brokenaxes(xlims=broken_xlims, wspace=broken_width)
+    else:
+        fig, ax = plt.subplots(figsize=(8, 6))
 
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     if color:
