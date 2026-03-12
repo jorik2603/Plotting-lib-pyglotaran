@@ -7,7 +7,7 @@ from pathlib import Path
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                                measurement_type="TA", plot_raw = False, apply_chirp_correction=False,legend=True,
-                               normalize = False, xlim=None, ylim=None,export=False,export_folder="slices"):
+                               color=None, normalize = False, xlim=None, ylim=None,export=False,export_folder="slices"):
     """
     Plots spectral slices with specific logic for TA or TRPL measurements.
 
@@ -30,8 +30,10 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
     if not isinstance(time_values, list): time_values = [time_values]
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    if color:
+        colors = color
+
     num_time_vals = len(time_values)
 
     # --- 2. Iterate through datasets and time values ---

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
 
-def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, normalize=False):
+def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, normalize=False, color=None):
     """
     Plots selected species-associated spectra from one or more datasets.
 
@@ -29,7 +29,8 @@ def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=No
         raise ValueError("The number of datasets must match the number of labels.")
 
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-
+    if color:
+        colors = color
     # --- 2. Create the plot ---
     fig, ax = plt.subplots(figsize=(8, 6))
     
