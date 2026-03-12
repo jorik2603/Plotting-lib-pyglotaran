@@ -123,7 +123,7 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                 else:
                     if broken_axes:
                         # 1. Do not use 'line, =' unpacking
-                        lines = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
+                        lines = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
                         
                         # 2. Extract color from the first line of the first broken axis segment
                         line_color = lines[0][0].get_color()
