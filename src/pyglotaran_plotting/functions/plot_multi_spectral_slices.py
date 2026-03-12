@@ -119,14 +119,17 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
 
                 legend_label = f"{ds_label} (t={relative_time:.1f} ps)"
                 if plot_raw:
-                    if broken_axes:
-                        line, = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
-                    else:
-                        line, = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
+                    lines = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)                                 
                 else:
                     if broken_axes:
-                        line, = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
-                        ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
+                        # 1. Do not use 'line, =' unpacking
+                        lines = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
+                        
+                        # 2. Extract color from the first line of the first broken axis segment
+                        line_color = lines[0][0].get_color()
+                        
+                        # 3. Increase zorder so it sits above the background
+                        ax.scatter(ds['spectral'], data_slice, color=line_color, alpha=0.5, s=10, zorder=2)
                     else:
                         line, = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
                         ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
@@ -143,15 +146,14 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
     # --- 5. Final plot formatting ---
     title = f"Spectral Slices ({measurement_type} Mode)"
     legend_title = "Dataset (Time)"
-    if measurement_type == "TA" and apply_chirp_correction:
-        title = "Chirp-Corrected Spectral Slices (TA Mode)"
+    if measurement_type == "TA":
         legend_title = "Dataset (Time relative to t₀)"
+        ax.set_ylabel("ΔA (mOD)")
     elif measurement_type == "TRPL":
         legend_title = "Dataset (Time relative to IRF)"
-        
+        ax.set_ylabel("I (A.U.)")
     #ax.set_title(title)
     ax.set_xlabel("Wavelength (nm)")
-    ax.set_ylabel("ΔA (mOD)")
     if legend:
         ax.legend()
     #ax.grid(True, which='both', linestyle='--', linewidth=0.5)
