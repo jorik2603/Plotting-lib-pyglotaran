@@ -53,7 +53,9 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                     fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
                     max_val[k] = fitted_slice[fitted_slice.argmax()]
                     k = k + 1
+            print(max_val)
             norm_val = np.max(max_val)
+            print(norm_val)
             
         for j, relative_time in enumerate(time_values):
             # --- 3. Determine selection time based on measurement_type ---
