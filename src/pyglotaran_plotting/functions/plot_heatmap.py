@@ -12,7 +12,7 @@ except ImportError:
     print("Warning: 'cmcrameri' library not found. Falling back to 'RdBu_r' colormap. Run 'pip install cmcrameri' for perceptually uniform colormaps.")
     DEFAULT_CMAP = 'RdBu_r'
 
-def _apply_chirp_correction_to_data(data_array, time_coords, spectral_coords, 
+def _apply_chirp_correction_TA(data_array, time_coords, spectral_coords, 
                                     irf_center_location_array,irf_width):
     """
     Applies chirp correction to the 2D data array using 1D interpolation
@@ -42,9 +42,19 @@ def _apply_chirp_correction_to_data(data_array, time_coords, spectral_coords,
         
     return d_corr
 
+def _apply_chirp_correction_TRPL(time_coords,irf_center_location,irf_width):
+    """
+    Applies T0 correction to the 2D data array by shifting the time axis.
+    """
+    t = time_coords
+    time_coords_for_plot = time_coords - irf_center_location + irf_width
+    return time_coords_for_plot
+
 def plot_heatmap(datasets, dataset_labels,
                  var_name="fitted_data",
                  plot_type="pcolormesh",
+                 measurement_type="TA",
+                 normalize=False,
                  levels=20,
                  apply_chirp_correction=False,
                  zscale="symlog",
@@ -68,6 +78,8 @@ def plot_heatmap(datasets, dataset_labels,
     """
     
     # --- 1. Standardize inputs ---
+    if measurement_type not in ["TA", "TRPL"]:
+        raise ValueError("measurement_type must be either 'TA' or 'TRPL'.")
     if not isinstance(datasets, list):
         datasets = [datasets]
     if not isinstance(dataset_labels, list):
@@ -102,30 +114,51 @@ def plot_heatmap(datasets, dataset_labels,
             X = ds['spectral'].values
             Y = ds['time'].values
             Z = data_array.values  # Z shape is (time, spectral)
-            y_label = "Time (ps)"
+            y_label = "Time (ps)"            
+              
             if export:
                     export_var = ds["data"].to_dataframe()
                     export_var.to_csv(label+"2d.csv")
 
             # --- 3. Handle Chirp Correction (Z-Data) ---
             if apply_chirp_correction:
-                try:
-                    irf_width = ds['irf_width'].values
-                    chirp_array_1d = ds['irf_center_location'].values
-                    Z = _apply_chirp_correction_to_data(
-                        data_array, Y, X, chirp_array_1d.squeeze(), irf_width
-                    )
-                except KeyError:
-                    print(f"Warning: 'irf_center_location' not found in '{label}'. Cannot apply chirp correction.")
-                except Exception as e:
-                    print(f"Warning: Failed to apply chirp correction for '{label}': {e}. Plotting uncorrected data.")
-            
+                
+                if measurement_type == "TA":
+                    try:
+                        irf_width = ds['irf_width'].values
+                        chirp_array_1d = ds['irf_center_location'].values
+                        Z = _apply_chirp_correctionTA(
+                            data_array, Y, X, chirp_array_1d.squeeze(), irf_width
+                        )
+                    except KeyError:
+                        print(f"Warning: 'irf_center_location' not found in '{label}'. Cannot apply chirp correction.")
+                    except Exception as e:
+                        print(f"Warning: Failed to apply chirp correction for '{label}': {e}. Plotting uncorrected data.")
+                
+                elif measurement_type == "TRPL":
+                    try:
+                        irf_width_offset = ds['irf_width'].item()
+                    except KeyError:
+                        irf_width_offset = 0            
+                    try:
+                        irf_center_offset = ds['irf_center'].item()
+                    except KeyError:
+                        irf_center_offset = 0
+                    Y = _apply_chirp_correction_TRPL(Y,irf_center_offset,irf_width_offset)
+                    
             # --- 4. Handle Color Scale (Z-Coordinate) ---
             if zscale == 'symlog':
                 norm = mcolors.SymLogNorm(linthresh=symlog_z_thresh, vmin=vmin, vmax=vmax, base=10)
             else: # linear
                 norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
             
+            # --- Normalization --- Only for TRPL data
+            if measurement_type == "TRPL":
+                if normalize:
+                    min_val = np.min(Z)
+                    max_val = np.max(Z)
+                    Z = (Z - min_val) / (Z - min_val)
+
             # --- 5. Plotting (using 1D X, 1D Y, 2D Z) ---
             if plot_type == 'contourf':
                 h = ax.contourf(
@@ -137,7 +170,11 @@ def plot_heatmap(datasets, dataset_labels,
                 )
             
             # --- 6. Add Colorbar Manually ---
-            cbar_label = "$\Delta A$ (mOD)"
+            if measurement_type == "TA":
+                cbar_label = "ΔA (mOD)"
+            elif measurement_type == "TRPL":
+                cbar_label = "I (A.U.)"
+            
             cbar = fig.colorbar(h, ax=ax, label=cbar_label)
             for a in cbar.ax.get_yticklabels():
                 a.set_fontsize(18)
@@ -164,12 +201,7 @@ def plot_heatmap(datasets, dataset_labels,
             print(f"Error plotting '{label}': {e}")
 
     # --- 8. Final Touches ---
-    #title = f"Heatmap of {var_name}"
-    #if apply_chirp_correction:
-    #    title += " (Chirp-Corrected Data)"
-    #fig.suptitle(title, fontsize=20, y=1.03)
     plt.tight_layout()
-    #format_publication_plot_no_latex(ax=ax)
     plt.show()
 
     return fig, axes
