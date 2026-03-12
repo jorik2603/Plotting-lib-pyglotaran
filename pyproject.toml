@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyglotaran-plotting"
-version = "0.2.9a"
+version = "0.2.9b"
 description = "Library for enhancing the capibilities of pyglotaran"
 readme = "README.md"
 authors = [{ name = "Jorik Schaap" }]
@@ -22,7 +22,8 @@ dependencies = [
     "pyglotaran",
     "pyglotaran-extras",
     "numba",
-    "cmcrameri", 
+    "cmcrameri",
+    "brokenaxes", 
 ]
 
 [project.urls]
