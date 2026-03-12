@@ -7,7 +7,7 @@ from pathlib import Path
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                                measurement_type="TA", plot_raw = False, apply_chirp_correction=False,legend=True,
-                               xlim=None, ylim=None,export=False,export_folder="slices"):
+                               normalize = False, xlim=None, ylim=None,export=False,export_folder="slices"):
     """
     Plots spectral slices with specific logic for TA or TRPL measurements.
 
@@ -18,6 +18,7 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
         measurement_type (str): "TA" or "TRPL". Determines how time-zero is defined.
         apply_chirp_correction (bool): If True and type is "TA", applies a
                                        spectrally-dependent time shift.
+        normalize (bool): If True normalizes spectrum now only for TRPL measurement type.
         xlim (tuple, optional): A tuple (min, max) for the x-axis limits.
         ylim (tuple, optional): A tuple (min, max) for the y-axis limits.
     """
@@ -43,6 +44,15 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
             print(f"Warning: 'irf_width' not found in '{ds_label}'. Assuming width offset is 0.")
             irf_width_offset = 0
         
+        if measurement_type == "TRPL":
+            if normalize:
+                max_val = np.zeros(num_time_vals,)                
+                for j, relative_time in enumerate(time_values):
+                    absolute_time_to_select = relative_time
+                    fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
+                    max_val[j] = fitted_slice[np.abs(fitted_slice).argmax()]
+            norm_val = np.max(max_val)
+            
         for j, relative_time in enumerate(time_values):
             # --- 3. Determine selection time based on measurement_type ---
             try:
@@ -77,7 +87,11 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                         absolute_time_to_select = relative_time - irf_width_offset
                         data_slice = ds['data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
                         fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
-
+                    if normalize:
+                        # Find the value with the maximum absolute magnitude from the fit
+                        fitted_slice = spectrum_slice / norm_val
+                        data_slice = spectrum_slice / norm_val
+                        
                 # --- 4. Plotting logic (common for both types) ---
                 lightness_factor = 1.0
                 if num_time_vals > 1:
