@@ -157,7 +157,7 @@ def plot_heatmap(datasets, dataset_labels,
                 if normalize:
                     min_val = np.min(Z)
                     max_val = np.max(Z)
-                    Z = (Z - min_val) / (Z - min_val)
+                    Z = (Z - min_val) / (max_val - min_val)
 
             # --- 5. Plotting (using 1D X, 1D Y, 2D Z) ---
             if plot_type == 'contourf':
