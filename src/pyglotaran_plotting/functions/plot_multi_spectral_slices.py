@@ -2,12 +2,13 @@ import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from brokenaxes import brokenaxes
 import colorsys
 from pathlib import Path
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                                measurement_type="TA", plot_raw = False, apply_chirp_correction=False,legend=True,
-                               color=None, normalize = False, xlim=None, ylim=None,export=False,export_folder="slices"):
+                               color=None, normalize = False, xlim=None, ylim=None, brokenaxes=False, broken_xlims=None,export=False,export_folder="slices"):
     """
     Plots spectral slices with specific logic for TA or TRPL measurements.
 
@@ -21,6 +22,8 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
         normalize (bool): If True normalizes spectrum now only for TRPL measurement type.
         xlim (tuple, optional): A tuple (min, max) for the x-axis limits.
         ylim (tuple, optional): A tuple (min, max) for the y-axis limits.
+        brokenaxes (bool): If True plots broken axes
+        broken_xlims ((tuple,tuple),optional): Two tuples (min, max) for the x-axis limits when using brokenaxes.
     """
     # --- 1. Validate inputs and set up plot ---
     if measurement_type not in ["TA", "TRPL"]:
@@ -111,10 +114,19 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
 
                 legend_label = f"{ds_label} (t={relative_time:.1f} ps)"
                 if plot_raw:
-                    line, = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
+                    if brokenaxes:
+                        bax = brokenaxes(xlims=broken_xlims, wspace=0.1)
+                        line, = bax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
+                    else:
+                        line, = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
                 else:
-                    line, = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
-                    ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
+                    if brokenaxes:
+                        bax = brokenaxes(xlims=broken_xlims, wspace=0.1)
+                        line, = bax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
+                        bax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
+                    else:
+                        line, = ax.plot(ds['spectral'], fitted_slice, label=legend_label, color=plot_color, linewidth=2)
+                        ax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
                 if export:
                     path = Path(export_folder)
                     path.mkdir(parents=True, exist_ok=True)
