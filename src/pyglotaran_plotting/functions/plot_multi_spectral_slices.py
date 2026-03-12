@@ -46,16 +46,21 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
         
         if measurement_type == "TRPL":
             if normalize:
-                max_val = np.zeros(num_time_vals,)
-                k = 0                
+                max_val = np.zeros(num_time_vals,)                  
                 for j, relative_time in enumerate(time_values):
-                    absolute_time_to_select = relative_time
-                    fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
-                    max_val[k] = fitted_slice[fitted_slice.argmax()]
-                    k = k + 1
-            print(max_val)
+                    try:
+                        irf_offset = ds['irf_center'].item()
+                        # UPDATED: Added - irf_width_offset
+                        absolute_time_to_select = relative_time + irf_offset - irf_width_offset
+                        fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
+                        max_val[j] = fitted_slice[fitted_slice.argmax()]
+                    except KeyError:
+                        print(f"Warning: 'irf_center' not found in '{ds_label}' for TRPL mode. Assuming offset is 0.")
+                        absolute_time_to_select = relative_time - irf_width_offset
+                        fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
+                        max_val[j] = fitted_slice[fitted_slice.argmax()]         
+                                       
             norm_val = np.max(max_val)
-            print(norm_val)
             
         for j, relative_time in enumerate(time_values):
             # --- 3. Determine selection time based on measurement_type ---
