@@ -8,7 +8,7 @@ from pathlib import Path
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                                measurement_type="TA", plot_raw = False, apply_chirp_correction=False,legend=True,
-                               color=None, normalize = False, xlim=None, ylim=None, brokenaxes=False, broken_xlims=None,export=False,export_folder="slices"):
+                               color=None, normalize = False, xlim=None, ylim=None, broken_axes=False, broken_xlims=None,export=False,export_folder="slices"):
     """
     Plots spectral slices with specific logic for TA or TRPL measurements.
 
@@ -114,13 +114,13 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
 
                 legend_label = f"{ds_label} (t={relative_time:.1f} ps)"
                 if plot_raw:
-                    if brokenaxes:
+                    if broken_axes:
                         bax = brokenaxes(xlims=broken_xlims, wspace=0.1)
                         line, = bax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
                     else:
                         line, = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
                 else:
-                    if brokenaxes:
+                    if broken_axes:
                         bax = brokenaxes(xlims=broken_xlims, wspace=0.1)
                         line, = bax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)
                         bax.scatter(ds['spectral'], data_slice, color=line.get_color(), alpha=0.5, s=10, zorder=-1)
