@@ -89,8 +89,8 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                         fitted_slice = ds['fitted_data'].sel(time=absolute_time_to_select, method='nearest').squeeze()
                     if normalize:
                         # Find the value with the maximum absolute magnitude from the fit
-                        fitted_slice = spectrum_slice / norm_val
-                        data_slice = spectrum_slice / norm_val
+                        fitted_slice = fitted_slice / norm_val
+                        data_slice = data_slice / norm_val
                         
                 # --- 4. Plotting logic (common for both types) ---
                 lightness_factor = 1.0
