@@ -127,7 +127,7 @@ def plot_heatmap(datasets, dataset_labels,
                     try:
                         irf_width = ds['irf_width'].values
                         chirp_array_1d = ds['irf_center_location'].values
-                        Z = _apply_chirp_correctionTA(
+                        Z = _apply_chirp_correction_TA(
                             data_array, Y, X, chirp_array_1d.squeeze(), irf_width
                         )
                     except KeyError:
