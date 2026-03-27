@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
+from scipy.signal import medfilt
 from scipy.ndimage import uniform_filter1d
+from scipy.optimize import minimize
 
 def estimate_chirp_sustained_edge(dataset, v, t_range=(-1, 8), wv_range=None, poly_order=3, c_wl=470, dt=0.025,
                                   cmap='seismic', t_delta=0.2, threshold=0.1, edge_width_fs=200, cutoff_freq=2.0):
@@ -117,30 +119,71 @@ def estimate_chirp_sustained_edge(dataset, v, t_range=(-1, 8), wv_range=None, po
         detected_t0.append(current_t0)
         valid_wv.append(wv[i])
 
-    # 4. Polynomial Fit
+    # 4. Outlier Rejection & Fit
     detected_t0 = np.array(detected_t0)
     valid_wv = np.array(valid_wv)
-    wl_norm = (valid_wv - c_wl) / 100
-    z = np.polyfit(wl_norm, detected_t0, poly_order)
+    
+    # -- Defense 1: Index-Lag Outlier Rejection --
+    # Reject a point if its t0 value is lower than the t0 value 10 indices before it.
+    clean_mask = np.ones(len(detected_t0), dtype=bool)
+    
+    lag_step = 15
+    for k in range(lag_step, len(detected_t0)):
+        if detected_t0[k] < detected_t0[k - lag_step]:
+            clean_mask[k] = False
+            
+    clean_t0 = detected_t0[clean_mask]
+    clean_wv = valid_wv[clean_mask]
+    outlier_t0 = detected_t0[~clean_mask]
+    outlier_wv = valid_wv[~clean_mask]
+    
+    # Normalize the CLEANED wavelengths for fitting
+    wl_norm = (clean_wv - c_wl) / 100
+    
+    # -- Defense 2: Robust Constrained Fitting --
+    # Step 4a: Calculate an unconstrained fit on clean data as a starting guess
+    z0 = np.polyfit(wl_norm, clean_t0, poly_order)
+    
+    # Step 4b: Objective function using Absolute Error (L1 Norm) instead of Squared
+    def objective_func(z):
+        p = np.poly1d(z)
+        return np.sum(np.abs(p(wl_norm) - clean_t0)) 
+        
+    # Step 4c: Define the monotonicity constraint
+    def monotonicity_constraint(z):
+        p_deriv = np.polyder(np.poly1d(z))
+        grid = np.linspace(wl_norm.min(), wl_norm.max(), 100)
+        return p_deriv(grid) # Change to -p_deriv(grid) if chirp is decreasing
+        
+    cons = {'type': 'ineq', 'fun': monotonicity_constraint}
+    
+    # Step 4d: Run the constrained optimizer
+    res = minimize(objective_func, z0, constraints=cons)
+    
+    if not res.success:
+        print(f"Warning: Constrained fit did not fully converge. Reason: {res.message}")
+        
+    z = res.x
     p = np.poly1d(z)
-
     # 5. Visualization
     fig, ax = plt.subplots(figsize=(14, 7))
     mesh = ax.pcolormesh(full_t, wv, d.T, shading='nearest', cmap=cmap, vmin=v[0], vmax=v[1])
     
-    # Plot detected points and the resulting fit
-    ax.scatter(detected_t0, valid_wv, color='black', s=2, alpha=0.5, label='Detected Edge Starts')
+    # Plot clean points and outliers separately
+    ax.scatter(clean_t0, clean_wv, color='black', s=5, alpha=0.8, label='Valid Edge Starts')
+    if len(outlier_wv) > 0:
+        ax.scatter(outlier_t0, outlier_wv, color='red', marker='x', s=20, label='Rejected Outliers')
     
     fit_wv = np.linspace(wv.min(), wv.max(), 100)
-    ax.plot(p((fit_wv - c_wl)/100), fit_wv, color='black', lw=2.5, linestyle='--', label='Poly Fit')
+    ax.plot(p((fit_wv - c_wl)/100), fit_wv, color='black', lw=2.5, linestyle='--', label='Robust Constrained Fit')
     
     ax.set_xlim(t_range[0] - 0.5, t_range[1] + 1.0)
     ax.set_xlabel('Time (ps)')
     ax.set_ylabel('Wavelength (nm)')
-    ax.set_title(f"FFT Edge Start Tracking (>{edge_width_fs}fs, Free Movement)")
+    ax.set_title(f"Robust FFT Edge Tracking (>{edge_width_fs}fs, Monotonic)")
     plt.colorbar(mesh, label='$\Delta$A')
     plt.legend()
     plt.show()
     
-    print(z)
+    print("Fitted Polynomial Coefficients:", z)
     return z, np.column_stack((detected_t0, valid_wv))
