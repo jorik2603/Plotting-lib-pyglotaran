@@ -98,9 +98,19 @@ def plot_decomposition(result, dataname, wavelength, symlog = False, linthresh=1
     fig, ax = plt.subplots(figsize=(12, 6))
 
     myFRLcolors = [
-        cmc.batlowS(1, alpha=0.8), "black", "k", "midnightblue", "blue",
-        "dodgerblue", "darkred", "olive", "aquamarine", "y", "tab:brown", "tab:purple"
-    ]
+        cmc.batlowS(1, alpha=0.5),  
+        "black",                    
+        "crimson",                  
+        "dodgerblue",               
+        "darkorange",               
+        "mediumblue",               
+        "limegreen",                
+        "darkviolet",               
+        "gold",                     
+        "deeppink",                 
+        "teal",                     
+        "saddlebrown"               
+]
     ax.set_prop_cycle(cycler(color=myFRLcolors))
 
     # Plot each component
