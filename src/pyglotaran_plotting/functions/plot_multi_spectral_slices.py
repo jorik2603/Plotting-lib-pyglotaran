@@ -164,9 +164,9 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
         else:
             ax.set_xlim(xlim)
     if ylim: ax.set_ylim(ylim)
-    plt.tight_layout()
     #format_publication_plot_no_latex(ax=ax)
     if return_fig_object:
-        return plt, ax
+        return fig, ax
     else:
+        plt.tight_layout()
         plt.show()

@@ -95,6 +95,7 @@ def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=No
     plt.tight_layout()
     #format_publication_plot_no_latex(ax=ax)
     if return_fig_object:
-        return plt, ax
+        return fig, ax
     else:
+        plt.tight_layout()
         plt.show()
