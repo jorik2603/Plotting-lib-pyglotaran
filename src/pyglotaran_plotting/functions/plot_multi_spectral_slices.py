@@ -8,7 +8,7 @@ from pathlib import Path
 
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                                measurement_type="TA", plot_raw = False, apply_chirp_correction=False,legend=True,
-                               color=None, normalize = False, xlim=None, ylim=None, broken_axes=False, broken_xlims=None, broken_width=0.1,export=False,export_folder="slices"):
+                               color=None, normalize = False, xlim=None, ylim=None, broken_axes=False, broken_xlims=None, broken_width=0.1,export=False,export_folder="slices", return_fig_object=False):
     """
     Plots spectral slices with specific logic for TA or TRPL measurements.
 
@@ -166,4 +166,7 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
     if ylim: ax.set_ylim(ylim)
     plt.tight_layout()
     #format_publication_plot_no_latex(ax=ax)
-    plt.show()
+    if return_fig_object:
+        return plt, ax
+    else:
+        plt.show()

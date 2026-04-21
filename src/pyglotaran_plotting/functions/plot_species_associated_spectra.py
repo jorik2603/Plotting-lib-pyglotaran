@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
 
-def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, normalize=False, color=None):
+def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, normalize=False, color=None, return_fig_object=False):
     """
     Plots selected species-associated spectra from one or more datasets.
 
@@ -94,4 +94,7 @@ def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=No
     
     plt.tight_layout()
     #format_publication_plot_no_latex(ax=ax)
-    plt.show()
+    if return_fig_object:
+        return plt, ax
+    else:
+        plt.show()

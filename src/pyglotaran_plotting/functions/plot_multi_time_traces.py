@@ -9,7 +9,7 @@ from pathlib import Path
 def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                            measurement_type="TA", normalize=False, normalize_raw=False, rescale=False, apply_chirp_correction=False,
                            xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0, symlog_time=False, log_y = False,
-                           linthresh=1, color=None, export=False, export_folder="time_traces"):
+                           linthresh=1, color=None, export=False, export_folder="time_traces", return_fig_object=False):
     """
     Plots time traces with specific time-zero logic for TA or TRPL measurements.
 
@@ -146,5 +146,8 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
     if ylim: ax.set_ylim(ylim)
     #format_publication_plot_no_latex(ax=ax)
     plt.tight_layout()
-    plt.show()
+    if return_fig_object:
+        return plt, ax
+    else:
+        plt.show()
   
