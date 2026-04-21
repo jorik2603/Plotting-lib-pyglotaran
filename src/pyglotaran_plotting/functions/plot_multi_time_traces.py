@@ -146,7 +146,7 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
     if ylim: ax.set_ylim(ylim)
     #format_publication_plot_no_latex(ax=ax)
     if return_fig_object:
-        return fig, ax
+        return  ax
     else:
         plt.tight_layout()
         plt.show()
