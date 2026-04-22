@@ -92,7 +92,7 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                 if simple_legend:
                     legend_label = f"{ds_label}"
                 else:
-                    legend_label = f"{ds_label} {actual_spec_val:.1f} nm"
+                    legend_label = f"{ds_label} {actual_spec_val:.0f} nm"
                 
                 if normalize:
                     # Find the value with the maximum absolute magnitude from the fit
