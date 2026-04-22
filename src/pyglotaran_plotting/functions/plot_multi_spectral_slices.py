@@ -9,7 +9,7 @@ from pathlib import Path
 def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                                measurement_type="TA", plot_raw = False, apply_chirp_correction=False,legend=True,
                                color=None, normalize = False, xlim=None, ylim=None, broken_axes=False, broken_xlims=None, 
-                               broken_width=0.1,export=False,export_folder="slices", return_fig_object=False, hide_spines=False):
+                               broken_width=0.1,export=False,export_folder="slices", return_fig_object=False, hide_spines=False, simple_legend=False):
     """
     Plots spectral slices with specific logic for TA or TRPL measurements.
 
@@ -118,7 +118,11 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                 h, l, s = colorsys.rgb_to_hls(*mcolors.to_rgb(base_color))
                 plot_color = colorsys.hls_to_rgb(h, max(0, min(1, l * lightness_factor)), s)
 
-                legend_label = f"{ds_label} {relative_time:.1f} ps"
+                if simple_legend:
+                    legend_label = f"{ds_label}"
+                else:
+                    legend_label = f"{ds_label} {relative_time:.0f} ps"
+                
                 if plot_raw:
                     lines = ax.plot(ds['spectral'], data_slice, label=legend_label, color=plot_color, linewidth=2)                                 
                 else:
