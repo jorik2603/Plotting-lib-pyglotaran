@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
 
-def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, normalize=False, color=None, return_fig_object=False):
+def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, measurement_type="TA", normalize=False, color=None, return_fig_object=False, hide_spines=False):
     """
     Plots selected species-associated spectra from one or more datasets.
 
@@ -19,6 +19,8 @@ def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=No
         xlim (tuple, optional): A tuple (min, max) to set the x-axis limits.
         ylim (tuple, optional): A tuple (min, max) to set the y-axis limits.
     """
+    if measurement_type not in ["TA", "TRPL"]:
+        raise ValueError("measurement_type must be either 'TA' or 'TRPL'.")
     # --- 1. Standardize inputs and get color cycle ---
     if not isinstance(datasets, list):
         datasets = [datasets]
@@ -81,8 +83,15 @@ def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=No
     # --- 4. Final plot formatting ---
     #ax.set_title("Species-Associated Spectra")
     ax.set_xlabel("Wavelength (nm)")
-    ax.set_ylabel("ΔA (mOD)")
-    ax.legend()
+    if measurement_type == "TA":
+        legend_title = "Dataset (Time relative to t₀)"
+        ax.set_ylabel("ΔA (mOD)")
+    elif measurement_type == "TRPL":
+        legend_title = "Dataset (Time relative to IRF)"
+        if normalize:
+            ax.set_ylabel("Normalized Intensity (A.U.)")
+        else:
+            ax.set_ylabel("I (A.U.)")
     #ax.grid(True, which='both', linestyle='--', linewidth=0.5)
     ax.axhline(0, color='black', linewidth=0.5)
     
@@ -92,6 +101,10 @@ def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=No
     if ylim:
         ax.set_ylim(ylim)
     
+    if hide_spines:
+        # Hide specific spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
     plt.tight_layout()
     #format_publication_plot_no_latex(ax=ax)
     if return_fig_object:

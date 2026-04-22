@@ -9,7 +9,7 @@ from pathlib import Path
 def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                            measurement_type="TA", normalize=False, normalize_raw=False, rescale=False, apply_chirp_correction=False,
                            xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0, symlog_time=False, log_y = False,
-                           linthresh=1, color=None, export=False, export_folder="time_traces", return_fig_object=False):
+                           linthresh=1, color=None, export=False, export_folder="time_traces", return_fig_object=False, hide_spines=False):
     """
     Plots time traces with specific time-zero logic for TA or TRPL measurements.
 
@@ -89,7 +89,7 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                 data_slice = ds['data'].sel(spectral=spec_val, method='nearest')
                 fitted_slice = ds['fitted_data'].sel(spectral=spec_val, method='nearest')
                 actual_spec_val = fitted_slice['spectral'].item()
-                legend_label = f"{ds_label} ({actual_spec_val:.1f} nm)"
+                legend_label = f"{ds_label} {actual_spec_val:.1f} nm"
                 
                 if normalize:
                     # Find the value with the maximum absolute magnitude from the fit
@@ -128,14 +128,19 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
     # Final plot formatting
     xlabel = "Time (ps)"
     if measurement_type == "TA":
-        ylabel = "ΔA (mOD)"
+        legend_title = "Dataset (Time relative to t₀)"
+        ax.set_ylabel("ΔA (mOD)")
     elif measurement_type == "TRPL":
-        ylabel = "I (A.U.)"
+        legend_title = "Dataset (Time relative to IRF)"
+        if normalize:
+            ax.set_ylabel("Normalized Intensity (A.U.)")
+        else:
+            ax.set_ylabel("I (A.U.)")
+            
 
     #ax.set_title(f"Time Traces at Specific Wavelengths ({measurement_type} Mode)")
     ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.legend()
+    ax.legend(frameon=False)
     if symlog_time:
         ax.set_xscale('symlog', linthresh=linthresh)
     if log_y:
@@ -144,6 +149,10 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
     ax.axhline(0, color='black', linewidth=0.5)
     if xlim: ax.set_xlim(xlim)
     if ylim: ax.set_ylim(ylim)
+    if hide_spines:
+        # Hide specific spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
     #format_publication_plot_no_latex(ax=ax)
     if return_fig_object:
         return  ax
