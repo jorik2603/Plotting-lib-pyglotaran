@@ -9,7 +9,7 @@ from pathlib import Path
 def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                            measurement_type="TA", normalize=False, normalize_raw=False, rescale=False, apply_chirp_correction=False,
                            xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0, symlog_time=False, log_y = False,
-                           linthresh=1, color=None, export=False, export_folder="time_traces", return_fig_object=False, hide_spines=False):
+                           linthresh=1, color=None, export=False, export_folder="time_traces", return_fig_object=False, hide_spines=False, simple_legend=False):
     """
     Plots time traces with specific time-zero logic for TA or TRPL measurements.
 
@@ -89,7 +89,10 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                 data_slice = ds['data'].sel(spectral=spec_val, method='nearest')
                 fitted_slice = ds['fitted_data'].sel(spectral=spec_val, method='nearest')
                 actual_spec_val = fitted_slice['spectral'].item()
-                legend_label = f"{ds_label} {actual_spec_val:.1f} nm"
+                if simple_legend:
+                    legend_label = f"{ds_label}"
+                else:
+                    legend_label = f"{ds_label} {actual_spec_val:.1f} nm"
                 
                 if normalize:
                     # Find the value with the maximum absolute magnitude from the fit
