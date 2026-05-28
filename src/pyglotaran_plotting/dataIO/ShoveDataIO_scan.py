@@ -98,7 +98,7 @@ class ShoveExplicitFile:
         data_arr = data_arr[idx]
         # Write to class
         self._spectral_indices = np.flip(wv_axis[0,1:])
-        self._times = times
+        self._times = times*1e-3
         self._data = np.fliplr(data_arr[:, 1:])
         return self.dataset(prepare=prepare)
 
