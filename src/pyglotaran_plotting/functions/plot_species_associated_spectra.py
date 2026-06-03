@@ -3,8 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
+from pathlib import Path
 
-def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, measurement_type="TA", normalize=False, color=None, return_fig_object=False, hide_spines=False, export=False):
+
+def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, measurement_type="TA", normalize=False, color=None, return_fig_object=False, hide_spines=False, export=False,export_folder="sas"):
     """
     Plots selected species-associated spectra from one or more datasets.
 
