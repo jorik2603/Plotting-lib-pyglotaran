@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import colorsys
 
-def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, measurement_type="TA", normalize=False, color=None, return_fig_object=False, hide_spines=False):
+def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=None, xlim=None, ylim=None, measurement_type="TA", normalize=False, color=None, return_fig_object=False, hide_spines=False, export=False):
     """
     Plots selected species-associated spectra from one or more datasets.
 
@@ -76,6 +76,11 @@ def plot_species_associated_spectra(datasets, dataset_labels, species_to_plot=No
                             
                 ax.plot(spectral_coords, spectrum_slice, label=legend_label, 
                         color=plot_color, linewidth=2.5)
+                if export:
+                    path = Path(export_folder)
+                    path.mkdir(parents=True, exist_ok=True)
+                    export_var = spectrum_slice.to_dataframe()
+                    export_var.to_csv(export_folder+"/"+legend_label+"_component.csv")
 
         except KeyError:
             print(f"Warning: 'species_associated_spectra' not found in '{ds_label}'. Skipping.")
