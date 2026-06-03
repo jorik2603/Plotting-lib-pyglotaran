@@ -124,7 +124,7 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                     path.mkdir(parents=True, exist_ok=True)
                     export_data = data_slice.values
                     export_time = time_coords_for_plot.values
-                    export_var = np.column_stack(export_time,export_data)
+                    export_var = np.column_stack((export_time,export_data))
                     export_var.to_csv(export_folder+"/"+legend_label+"extracted.csv")
 
             except Exception as e:
