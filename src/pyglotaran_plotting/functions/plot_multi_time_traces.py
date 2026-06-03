@@ -125,7 +125,7 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                     export_data = data_slice.values
                     export_time = time_coords_for_plot.values
                     export_var = np.column_stack((export_time,export_data))
-                    export_var.to_csv(export_folder+"/"+legend_label+"extracted.csv")
+                    np.savetxt(export_folder+"/"+legend_label+"extracted.csv", export_var, delimiter=',')
 
             except Exception as e:
                 print(f"Could not plot for {ds_label} at {spec_val}: {e}")
