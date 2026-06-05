@@ -135,6 +135,12 @@ def plot_heatmap(datasets, dataset_labels,
                     except Exception as e:
                         print(f"Warning: Failed to apply chirp correction for '{label}': {e}. Plotting uncorrected data.")
                 
+                if export:
+                        da = xr.DataArray(data=Z,dims=["time", "spectral"],
+                                          coords=dict(time=("time", Y),spectral=("spectral", X)))
+                        export_var = da.to_dataframe(name="data")
+                        export_var.to_csv(label+"2d_chirp_corr.csv")
+                        
                 elif measurement_type == "TRPL":
                     try:
                         irf_width_offset = ds['irf_width'].item()
