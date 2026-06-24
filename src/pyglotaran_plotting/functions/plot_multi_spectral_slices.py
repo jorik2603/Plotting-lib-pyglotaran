@@ -142,8 +142,10 @@ def plot_multi_spectral_slices(datasets, dataset_labels, time_values,
                     path = Path(export_folder)
                     path.mkdir(parents=True, exist_ok=True)
                     export_var = data_slice.to_dataframe()
-                    export_var.to_csv(export_folder+"/"+legend_label+"spectrum.csv")
-                    
+                    export_fit = fitted_slice.to_dataframe()
+                    export_var.to_csv(export_folder+"/"+legend_label+"raw_spectrum.csv")
+                    export_var.to_csv(export_folder+"/"+legend_label+"fit_spectrum.csv")
+
 
             except Exception as e:
                 print(f"Could not plot for {ds_label} at time {relative_time}: {e}")
