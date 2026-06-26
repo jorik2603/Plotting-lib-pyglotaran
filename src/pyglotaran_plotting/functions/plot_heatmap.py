@@ -134,13 +134,7 @@ def plot_heatmap(datasets, dataset_labels,
                         print(f"Warning: 'irf_center_location' not found in '{label}'. Cannot apply chirp correction.")
                     except Exception as e:
                         print(f"Warning: Failed to apply chirp correction for '{label}': {e}. Plotting uncorrected data.")
-                
-                if export:
-                        da = xr.DataArray(data=Z,dims=["time", "spectral"],
-                                          coords=dict(time=("time", Y),spectral=("spectral", X)))
-                        export_var = da.to_dataframe(name="data")
-                        export_var.to_csv(label+"2d_chirp_corr.csv")
-                        
+                                                    
                 elif measurement_type == "TRPL":
                     try:
                         irf_width_offset = ds['irf_width'].item()
@@ -151,6 +145,12 @@ def plot_heatmap(datasets, dataset_labels,
                     except KeyError:
                         irf_center_offset = 0
                     Y = _apply_chirp_correction_TRPL(Y,irf_center_offset,irf_width_offset)
+                
+                if export:
+                        da = xr.DataArray(data=Z,dims=["time", "spectral"],
+                                          coords=dict(time=("time", Y),spectral=("spectral", X)))
+                        export_var = da.to_dataframe(name="data")
+                        export_var.to_csv(label+"2d_chirp_corr.csv")
                     
             # --- 4. Handle Color Scale (Z-Coordinate) ---
             if zscale == 'symlog':
