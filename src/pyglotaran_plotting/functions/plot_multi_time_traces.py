@@ -9,7 +9,7 @@ from pathlib import Path
 def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
                            measurement_type="TA", normalize=False, normalize_raw=False, rescale=False, apply_chirp_correction=False,
                            xlim=None, ylim=None, smoothing=False, sg_window = 5, sg_order = 0, symlog_time=False, log_y = False,
-                           linthresh=1, color=None, export=False, export_folder="time_traces", return_fig_object=False, hide_spines=False, simple_legend=False):
+                           linthresh=1, color=None, export=False, export_folder="time_traces", return_fig_object=False, hide_spines=False, legend=False,simple_legend=False):
     """
     Plots time traces with specific time-zero logic for TA or TRPL measurements.
 
@@ -134,10 +134,8 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
     # Final plot formatting
     xlabel = "Time (ps)"
     if measurement_type == "TA":
-        legend_title = "Dataset (Time relative to t₀)"
         ax.set_ylabel("ΔA (mOD)")
     elif measurement_type == "TRPL":
-        legend_title = "Dataset (Time relative to IRF)"
         if normalize:
             ax.set_ylabel("Normalized Intensity (A.U.)")
         else:
@@ -146,7 +144,8 @@ def plot_multi_time_traces(datasets, dataset_labels, spectral_values,
 
     #ax.set_title(f"Time Traces at Specific Wavelengths ({measurement_type} Mode)")
     ax.set_xlabel(xlabel)
-    ax.legend(frameon=False)
+    if legend:
+        ax.legend(frameon=False)
     if symlog_time:
         ax.set_xscale('symlog', linthresh=linthresh)
     if log_y:
