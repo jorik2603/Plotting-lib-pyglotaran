@@ -97,15 +97,13 @@ def plot_multi_time_traces(
         try:
           if normalize_raw:
             vals = (
-                ds["data"].sel(spectral=spec_val, method="nearest").values
-                * 1000
+                ds["data"].sel(spectral=spec_val, method="nearest").values                
             )
           else:
             vals = (
                 ds["fitted_data"]
                 .sel(spectral=spec_val, method="nearest")
-                .values
-                * 1000
+                .values                
             )
           if vals.size > 0:
             local_max = np.max(np.abs(vals))
@@ -152,9 +150,9 @@ def plot_multi_time_traces(
         color_index += 1
 
         # Select data and plot
-        data_slice = ds["data"].sel(spectral=spec_val, method="nearest") * 1000
+        data_slice = ds["data"].sel(spectral=spec_val, method="nearest")
         fitted_slice = (
-            ds["fitted_data"].sel(spectral=spec_val, method="nearest") * 1000
+            ds["fitted_data"].sel(spectral=spec_val, method="nearest")
         )
         actual_spec_val = fitted_slice["spectral"].item()
 
